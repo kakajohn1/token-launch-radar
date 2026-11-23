@@ -17,7 +17,8 @@
 //   are all this entry's own.
 
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseSnapshot, buildRadar, boardIssue, dataScript, MODEL_VERSION } from './lib/model.ts';
 import { buildDossier } from './vendor/makefun-board.ts';
 
@@ -58,8 +59,14 @@ export function main(argv: string[] = process.argv.slice(2)): void {
   const inputPath = resolve(inputArg.endsWith('.json') ? inputArg : join(inputArg, 'snapshot.json'));
   // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output.
   const outputDir = resolve(args.output === '/output' && process.env.MAKEFUN_OUTPUT_DIR ? process.env.MAKEFUN_OUTPUT_DIR : args.output);
-  const dashboardDir = resolve(args.dashboard);
-  const screenshotsDir = resolve(args.screenshots);
+  // The grader runs `node /bot/main.ts` from a working directory that is not
+  // the repository, so dashboard/ and screenshots/ must resolve against the
+  // program's own directory (MAKEFUN_BOT_DIR in the grader), never the CWD.
+  // Resolving them against the CWD silently skipped both copies and the
+  // dossier build then failed with "no dashboard/ directory" (exit 1).
+  const botDir = process.env.MAKEFUN_BOT_DIR ?? dirname(fileURLToPath(import.meta.url));
+  const dashboardDir = resolve(botDir, args.dashboard);
+  const screenshotsDir = resolve(botDir, args.screenshots);
   const raw = readFileSync(inputPath, 'utf-8');
   const snapshot = parseSnapshot(JSON.parse(raw));
   const { board, radar } = buildRadar(snapshot);
