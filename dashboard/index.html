@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — Pre-token launches, ranked by implied value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="missing" hidden><p><strong>data.js not found.</strong> This page needs its data file beside it to render the board.</p></div>
+<div id="app" hidden>
+<header class="masthead">
+  <div class="masthead-top">
+    <p class="kicker">A launch radar for tokenless protocols</p>
+    <p class="meta"><span id="meta-date"></span> · Model <span id="meta-model"></span></p>
+  </div>
+  <h1>Token Radar</h1>
+  <p class="lede">The board ranks protocols that record no token yet by their implied value — fitted fully diluted value times the odds of a launch in the next twelve months — with live tokens beside them for comparison.</p>
+</header>
+
+<section class="strip" id="strip" aria-label="Board integrity facts"></section>
+
+<section class="spotlight">
+  <div class="section-head"><h2>Top farms</h2><p id="spot-count"></p></div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<main>
+  <div class="controls">
+    <div class="tabs" role="tablist" aria-label="Board view">
+      <button data-tab="pre" role="tab">Pre-token</button>
+      <button data-tab="live" role="tab">Live</button>
+      <button data-tab="all" role="tab">All</button>
+      <button data-tab="aside" role="tab">Set aside</button>
+    </div>
+    <label class="search">Search <input id="q" type="search" placeholder="Name or slug" autocomplete="off"></label>
+    <label class="cat">Category <select id="cat"></select></label>
+  </div>
+  <p class="count" id="count"></p>
+  <p class="aside-note" id="aside-note" hidden>Set aside, not ranked: wrapped, staked or bridged products of tokens that already trade, exchanges, and versioned deployments of a protocol that is itself on the board.</p>
+  <div class="table-wrap">
+  <table id="board">
+    <thead><tr>
+      <th data-sort="rank">Rank</th><th data-sort="name">Protocol</th><th data-sort="category">Category</th>
+      <th data-sort="tvl" class="num">TVL</th><th data-sort="chg" class="num">7d %</th><th data-sort="age" class="num">Age</th>
+      <th data-sort="odds" class="num">Odds</th><th data-sort="value" class="num">Implied value</th><th data-sort="verdict">Verdict</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <table id="aside-table" hidden>
+    <thead><tr><th>Protocol</th><th>Category</th><th class="num">TVL</th><th>Status</th><th>Reason</th></tr></thead>
+    <tbody id="aside-rows"></tbody>
+  </table>
+  </div>
+  <p class="empty" id="empty" hidden>No protocols match this filter.</p>
+</main>
+
+<section class="model" id="model">
+  <h2>How the model works</h2>
+  <div class="model-grid">
+    <div>
+      <h3>Value, in words</h3>
+      <p>For a protocol that records no token, implied value is its fitted fully diluted value (FDV) times its launch odds. Fitted FDV is TVL times a category multiple times 2.0. The category multiple is the geometric mean of two things: the snapshot's own shrunk median market-cap-to-TVL among live protocols of that category, and an external FDV-to-TVL comp from research — clamped between 0.03 and 1.0. The 2.0 is the median FDV-to-market-cap ratio across comparable launched tokens.</p>
+      <p>Launch odds are the chance a still-tokenless protocol launches within the next twelve months, from a decreasing-hazard survival fit on the peers' record. Odds fall with age — about 0.7 at thirty days, about 0.4 at one year, under 0.1 at three years for a $100M-TVL protocol with flat growth — rise slightly with TVL, and fall with fast seven-day growth.</p>
+      <p>Live-token rows are valued at their reported market cap where one is reported; where it is not, they are valued at the fitted FDV and flagged as such. They are labelled POSITION, not a farm.</p>
+      <h3>Verdicts, pre-token only</h3>
+      <p><span class="badge farm">FARM</span> implied value of $25M or more. <span class="badge thin">THIN</span> $5M to $25M. <span class="badge skip">SKIP</span> under $5M.</p>
+    </div>
+    <div>
+      <h3>Hazard fit</h3>
+      <dl class="params" id="hazard"></dl>
+      <h3>Validation</h3>
+      <dl class="params" id="valid"></dl>
+    </div>
+  </div>
+  <h3>Category multiples used</h3>
+  <div class="mult-wrap"><table class="mults">
+    <thead><tr><th>Category</th><th class="num">Blended multiple</th><th class="num">Snapshot multiple</th></tr></thead>
+    <tbody id="mults"></tbody>
+  </table></div>
+  <h3>Limitations, stated plainly</h3>
+  <p class="limits">The value model is rough. Its ten-fold cross-validation median error is <span id="lim-cv"></span>, barely better than the <span id="lim-base"></span> global-median baseline, and its older-to-newer held-out R² is <span id="lim-r2"></span> — TVL alone explains little of a token's value. Implied values are model claims, not prices and not advice. A protocol is described as recording no token, never as having none: the snapshot only records what it lists. The snapshot is sealed as of the date above; nothing after it is reflected.</p>
+</section>
+
+<footer>
+  <p>Methodology: snapshot sealed <span id="foot-date"></span>, source DefiLlama. The model is fitted on the snapshot at build time; no protocol names are hardcoded into the board — every row, multiple and verdict is rendered from the data file. Two runs of the build produce identical bytes.</p>
+  <p><strong>Implied values are model claims, not prices or advice.</strong></p>
+</footer>
+</div>
+
+<dialog id="detail" aria-label="Protocol detail">
+  <div class="dlg-head"><h2 id="d-name"></h2><button id="d-close" type="button">Close</button></div>
+  <div id="d-body"></div>
+</dialog>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
